@@ -1,0 +1,76 @@
+name: Build and Push Docker Image to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: rosin-7
+  ECR_REGISTRY: 234026641698.dkr.ecr.ap-southeast-1.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create ECR Repository if not exists
+        run: |
+          aws ecr describe-repositories \
+          --repository-names $ECR_REPOSITORY \
+          --region $AWS_REGION > /dev/null 2>&1 || \
+          aws ecr create-repository \
+          --repository-name $ECR_REPOSITORY \
+          --region $AWS_REGION
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract Git SHA
+        id: vars
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }} .
+
+      - name: Tag Docker image
+        run: |
+          docker tag \
+          $ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }} \
+          $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }}
+
+          docker tag \
+          $ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }} \
+          $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Push Docker images
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Output Image URI
+        run: |
+          echo "Docker image pushed successfully"
+
+          echo "Version Tag:"
+          echo "$ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.vars.outputs.sha_short }}"
+
+          echo "Latest Tag:"
+          echo "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
