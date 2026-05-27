@@ -1,18 +1,23 @@
 # Use lightweight Nginx image
 FROM nginx:alpine
-# Remove default nginx website files
+
+# Remove default nginx files
 RUN rm -rf /usr/share/nginx/html/*
-# Copy HTML files
+
+# Copy website files
 COPY index.html /usr/share/nginx/html/
 COPY templatemo.html /usr/share/nginx/html/
 COPY timer.html /usr/share/nginx/html/
-# Copy JavaScript file
+
+# Copy CSS and JS
 COPY templatemo-aurum-script.js /usr/share/nginx/html/
-# Copy CSS file
 COPY templatemo-aurum-gold.css /usr/share/nginx/html/
+
 # Copy images folder
 COPY images/ /usr/share/nginx/html/images/
-# Expose port 80
+
+# Expose nginx port
 EXPOSE 80
+
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
