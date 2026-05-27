@@ -8,7 +8,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: rosin0007
-  ECR_REGISTRY: 234026641698.dkr.ecr.us-east-1.amazonaws.com/rosin0007/rosin0007
+  ECR_REGISTRY: 234026641698.dkr.ecr.us-east-1.amazonaws.com/rosin0007
 
 jobs:
   build-and-push:
